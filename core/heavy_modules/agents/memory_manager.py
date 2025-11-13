@@ -1,17 +1,19 @@
+#core/heavy_modules/agents/memory_manager.py
+
 import json
 from pathlib import Path
-from utils.logger import log_info, log_error
+from core.utils.logger import init_logger, log_info, log_error
+
+logger = init_logger("MemoryManager")
 
 class MemoryManager:
-    """
-    Gestor de memoria persistente del agente autónomo.
-    Permite recordar contexto y configuraciones entre sesiones.
-    """
-
     def __init__(self, memory_dir="data/outputs/memory"):
         self.memory_dir = Path(memory_dir)
         self.memory_dir.mkdir(parents=True, exist_ok=True)
-        log_info("MemoryManager inicializado correctamente.")
+        log_info(logger, "MemoryManager inicializado correctamente.")
+
+    # En todas las funciones, cambiar log_info/log_error por log_info(logger, ...) y log_error(logger, ...)
+
 
     def _get_memory_file(self, session_id):
         return self.memory_dir / f"{session_id}.json"

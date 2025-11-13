@@ -1,18 +1,18 @@
 # core/heavy_modules/reporting/report_builder.py
 
 from datetime import datetime
-from core.utils.logger import log_info, log_error, log_warning
 from core.heavy_modules.reporting import export_pdf, export_excel
 from core.heavy_modules.reporting.metrics import evaluate_model_performance, summarize_results
-
+from core.utils.logger import init_logger, log_info, log_warning, log_error
 
 class ReportBuilder:
     """
     Construye y exporta reportes combinando texto, métricas y visualizaciones.
-    Robustamente diseñado para soportar PDF y Excel, con logging y validaciones.
+    Soporta PDF y Excel, con logging y validaciones.
     """
 
     def __init__(self, title: str = "Reporte Técnico de IA"):
+        self.logger = init_logger("ReportBuilder")
         self.report = {
             "title": title,
             "sections": {},
@@ -20,52 +20,57 @@ class ReportBuilder:
             "metrics": {},
             "metadata": {}
         }
-        log_info(f"ReportBuilder inicializado: {title}")
+        log_info(self.logger, f"ReportBuilder inicializado: {title}")
 
+    # ---------------------------------------------------------------
+    # Construcción de la estructura del reporte
+    # ---------------------------------------------------------------
     def build_structure(self, metadata: dict = None):
-        """Crea la estructura base del reporte con metadatos por defecto si no se proporcionan."""
         try:
             self.report["metadata"] = metadata or {
                 "autor": "Sistema Inteligente",
                 "versión": "1.0",
                 "fecha_creacion": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             }
-            log_info("Estructura del reporte construida correctamente.")
+            log_info(self.logger, "Estructura del reporte construida correctamente.")
             return self.report
         except Exception as e:
-            log_error(f"Error construyendo estructura del reporte: {e}")
+            log_error(self.logger, f"Error construyendo estructura del reporte: {e}")
             raise
 
+    # ---------------------------------------------------------------
+    # Agregar secciones de texto
+    # ---------------------------------------------------------------
     def add_text_sections(self, sections: dict):
-        """Agrega secciones de texto descriptivas o analíticas al reporte."""
         try:
             if not isinstance(sections, dict):
-                raise TypeError("sections debe ser un diccionario con {titulo: contenido}.")
+                raise TypeError("sections debe ser un diccionario {titulo: contenido}.")
             self.report["sections"].update(sections)
-            log_info(f"Se agregaron {len(sections)} secciones al reporte.")
+            log_info(self.logger, f"Se agregaron {len(sections)} secciones al reporte.")
         except Exception as e:
-            log_error(f"Error agregando secciones: {e}")
+            log_error(self.logger, f"Error agregando secciones: {e}")
             raise
 
+    # ---------------------------------------------------------------
+    # Incrustar gráficos
+    # ---------------------------------------------------------------
     def embed_charts(self, chart_paths: list):
-        """Incorpora rutas de gráficos generados previamente al reporte."""
         try:
             if not isinstance(chart_paths, list):
                 raise TypeError("chart_paths debe ser una lista de rutas de archivos.")
             self.report["charts"].extend(chart_paths)
-            log_info(f"Se incrustaron {len(chart_paths)} gráficos en el reporte.")
+            log_info(self.logger, f"Se incrustaron {len(chart_paths)} gráficos en el reporte.")
         except Exception as e:
-            log_error(f"Error al incrustar gráficos: {e}")
+            log_error(self.logger, f"Error al incrustar gráficos: {e}")
             raise
 
+    # ---------------------------------------------------------------
+    # Insertar métricas y resumen de modelo
+    # ---------------------------------------------------------------
     def insert_metrics(self, model_results: dict):
-        """
-        Calcula e inserta métricas de rendimiento y resumen de resultados.
-        model_results: Diccionario con resultados de predicción o evaluación.
-        """
         try:
             if not model_results:
-                log_warning("No se proporcionaron resultados del modelo; las métricas serán vacías.")
+                log_warning(self.logger, "No se proporcionaron resultados del modelo; las métricas serán vacías.")
                 self.report["metrics"] = {}
                 self.report["sections"]["Resumen de métricas"] = "No se generaron métricas."
                 return
@@ -74,35 +79,32 @@ class ReportBuilder:
             summary = summarize_results(metrics)
             self.report["metrics"] = metrics
             self.report["sections"]["Resumen de métricas"] = summary
-            log_info("Métricas insertadas correctamente en el reporte.")
+            log_info(self.logger, "Métricas insertadas correctamente en el reporte.")
         except Exception as e:
-            log_error(f"Error insertando métricas: {e}")
+            log_error(self.logger, f"Error insertando métricas: {e}")
             raise
 
+    # ---------------------------------------------------------------
+    # Finalizar y exportar reporte
+    # ---------------------------------------------------------------
     def finalize_report(self, export_format="pdf", filename: str = "reporte_final"):
-        """
-        Genera el archivo final en el formato deseado.
-        export_format: 'pdf', 'excel' o lista de ambos.
-        """
         try:
-            # Soporte para lista de formatos
             formats = [export_format] if isinstance(export_format, str) else export_format
             if not formats:
                 raise ValueError("Debe proporcionar al menos un formato de exportación válido.")
 
-            # Añadir timestamp automático al archivo
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
             for fmt in formats:
-                fmt_lower = fmt.lower()
                 file_with_ts = f"{filename}_{timestamp}"
-                if fmt_lower == "pdf":
+                if fmt.lower() == "pdf":
                     export_pdf.create_pdf(self.report, f"{file_with_ts}.pdf")
-                elif fmt_lower == "excel":
+                elif fmt.lower() == "excel":
                     export_excel.create_excel_summary(self.report, f"{file_with_ts}.xlsx")
                 else:
-                    log_warning(f"Formato no soportado: {fmt}. Se ignorará.")
-            log_info(f"Reporte exportado exitosamente en: {', '.join(formats).upper()}")
+                    log_warning(self.logger, f"Formato no soportado: {fmt}. Se ignorará.")
+
+            log_info(self.logger, f"Reporte exportado exitosamente en: {', '.join([f.upper() for f in formats])}")
         except Exception as e:
-            log_error(f"Error finalizando reporte: {e}")
+            log_error(self.logger, f"Error finalizando reporte: {e}")
             raise

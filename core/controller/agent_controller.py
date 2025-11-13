@@ -13,11 +13,14 @@ from enum import Enum
 from typing import Optional, Dict, Any
 import pandas as pd
 
-from core.utils.logger import log_info, log_error
+
 from core.controller.data_manager import DataManager
 from core.controller.model_manager import ModelManager
 from core.controller.report_manager import ReportManager
 from core.heavy_modules.agents.autonomous_agent import AutonomousAgent
+
+from core.utils.logger import init_logger, log_info, log_error
+logger = init_logger("AgentController")
 
 
 class AgentState(Enum):
@@ -45,12 +48,12 @@ class AgentController:
     def initialize_agent(self) -> None:
         """Configura e inicializa el agente LangChain."""
         try:
-            log_info("Inicializando agente LangChain...")
+            log_info(logger,"Inicializando agente LangChain...")
             self.agent = AutonomousAgent()
             self.state = AgentState.IDLE
-            log_info("Agente inicializado correctamente.")
+            log_info(logger,"Agente inicializado correctamente.")
         except Exception as e:
-            log_error(f"Error al inicializar el agente: {e}")
+            log_error(logger,f"Error al inicializar el agente: {e}")
             self.state = AgentState.ERROR
             traceback.print_exc()
 
@@ -68,7 +71,7 @@ class AgentController:
         def _pipeline():
             try:
                 self.state = AgentState.RUNNING
-                log_info(f"Inicio del pipeline con archivo: {file_path}")
+                log_info(logger,f"Inicio del pipeline con archivo: {file_path}")
 
                 # 1. Cargar y limpiar datos
                 df = self.data_manager.load_data(file_path)
@@ -85,18 +88,19 @@ class AgentController:
                 # 4. Generar reporte final
                 self.state = AgentState.RUNNING
                 report_path = self.report_manager.generate_report(df, insights)
-                log_info(f"Reporte generado: {report_path}")
+                log_info(logger,f"Reporte generado: {report_path}")
 
                 self.state = AgentState.IDLE
-                log_info("Pipeline completado correctamente.")
+                log_info(logger,"Pipeline completado correctamente.")
 
             except Exception as e:
-                log_error(f"Error en el pipeline: {e}")
+                log_error(logger,f"Error en el pipeline: {e}")
                 self.state = AgentState.ERROR
                 traceback.print_exc()
 
         # Ejecutar el pipeline en hilo separado
-        self.current_thread = threading.Thread(target=_pipeline)
+        self.current_thread = threading.Thread(target=_pipeline, daemon=True)
+
         self.current_thread.start()
 
     # -------------------------------------------------------------------------
@@ -104,7 +108,7 @@ class AgentController:
     # -------------------------------------------------------------------------
     def delegate_task(self, task_name: str, params: Dict[str, Any]) -> Any:
         """Delegar tareas específicas a los módulos correspondientes."""
-        log_info(f"Delegando tarea: {task_name}")
+        log_info(logger,f"Delegando tarea: {task_name}")
         try:
             if task_name == "clean_data":
                 return self.data_manager.clean_data(params["data"])
@@ -115,7 +119,7 @@ class AgentController:
             else:
                 raise ValueError(f"Tarea no reconocida: {task_name}")
         except Exception as e:
-            log_error(f"Error al delegar tarea '{task_name}': {e}")
+            log_error(logger,f"Error al delegar tarea '{task_name}': {e}")
             traceback.print_exc()
             self.state = AgentState.ERROR
 
@@ -136,12 +140,12 @@ class AgentController:
     def reset_agent(self) -> None:
         """Reinicia el agente y limpia sus memorias previas."""
         try:
-            log_info("Reiniciando agente y limpiando memoria...")
+            log_info(logger,"Reiniciando agente y limpiando memoria...")
             if self.agent:
                 self.agent.reset_memory()
             self.state = AgentState.IDLE
-            log_info("Agente reiniciado correctamente.")
+            log_info(logger,"Agente reiniciado correctamente.")
         except Exception as e:
-            log_error(f"Error al reiniciar agente: {e}")
+            log_error(logger,f"Error al reiniciar agente: {e}")
             self.state = AgentState.ERROR
             traceback.print_exc()

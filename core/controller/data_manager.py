@@ -1,11 +1,11 @@
 # core/controller/data_manager.py
 
-import os
 import json
-import pandas as pd
 from pathlib import Path
 from typing import Tuple
-from jsonschema import validate, ValidationError
+import pandas as pd
+from jsonschema import ValidationError
+
 from core.utils.data_cleaner import (
     remove_nulls,
     remove_duplicates,
@@ -15,11 +15,13 @@ from core.utils.data_cleaner import (
 )
 from core.utils.logger import init_logger, log_info, log_warning, log_error
 
+# Inicializar logger central
+logger = init_logger("DataManager")
+
 # Carpeta para datos procesados
 PROCESSED_DIR = Path("data/datasets/processed/")
 PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
 
-logger = init_logger("DataManager")
 
 class DataManager:
     """
@@ -110,6 +112,7 @@ class DataManager:
     def save_processed(self, df: pd.DataFrame, filename: str = "processed_data.csv") -> str:
         output_path = self.processed_dir / filename
         save_clean_data(df, output_path)
+        log_info(logger, f"Datos procesados guardados en: {output_path}")
         return str(output_path)
 
     # ---------------------------------------------------------------

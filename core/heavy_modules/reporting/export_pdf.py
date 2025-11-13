@@ -4,25 +4,21 @@ from reportlab.lib.pagesizes import A4
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
-from core.utils.logger import log_info, log_error
+from core.utils.logger import init_logger, log_info, log_error
+
+logger = init_logger("ExportPDF")
 
 
 def add_images(story: list, charts: list):
-    """
-    Inserta gráficos en el PDF a partir de rutas de imagen.
-    """
     for chart_path in charts:
         try:
             story.append(Image(chart_path, width=400, height=250))
             story.append(Spacer(1, 10))
         except Exception:
-            log_error(f"No se pudo insertar gráfico: {chart_path}")
+            log_error(logger, f"No se pudo insertar gráfico: {chart_path}")
 
 
 def add_table(story: list, metrics: dict):
-    """
-    Inserta una tabla con métricas en el PDF.
-    """
     if not metrics:
         return
 
@@ -39,52 +35,37 @@ def add_table(story: list, metrics: dict):
 
 
 def save_pdf(doc: SimpleDocTemplate, story: list, filename: str):
-    """
-    Construye y guarda el PDF en disco.
-    """
     try:
         doc.build(story)
-        log_info(f"PDF generado correctamente: {filename}")
+        log_info(logger, f"PDF generado correctamente: {filename}")
     except Exception as e:
-        log_error(f"Error guardando PDF: {e}")
+        log_error(logger, f"Error guardando PDF: {e}")
         raise
 
 
 def create_pdf(report_data: dict, filename: str):
-    """
-    Crea un PDF completo a partir de report_data, incluyendo título, secciones,
-    imágenes, métricas y metadatos.
-    """
     try:
         doc = SimpleDocTemplate(filename, pagesize=A4)
         styles = getSampleStyleSheet()
         story = []
 
-        # Título principal
         story.append(Paragraph(report_data.get("title", "Reporte"), styles["Title"]))
         story.append(Spacer(1, 12))
 
-        # Metadatos
         metadata = report_data.get("metadata", {})
         for key, value in metadata.items():
             story.append(Paragraph(f"<b>{key.capitalize()}:</b> {value}", styles["Normal"]))
         story.append(Spacer(1, 12))
 
-        # Secciones de texto
         for section_title, content in report_data.get("sections", {}).items():
             story.append(Paragraph(f"<b>{section_title}</b>", styles["Heading2"]))
             story.append(Paragraph(content, styles["Normal"]))
             story.append(Spacer(1, 10))
 
-        # Gráficos
         add_images(story, report_data.get("charts", []))
-
-        # Métricas
         add_table(story, report_data.get("metrics", {}))
-
-        # Guardar PDF
         save_pdf(doc, story, filename)
 
     except Exception as e:
-        log_error(f"Error generando PDF: {e}")
+        log_error(logger, f"Error generando PDF: {e}")
         raise

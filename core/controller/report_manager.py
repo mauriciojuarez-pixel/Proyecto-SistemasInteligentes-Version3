@@ -1,134 +1,126 @@
 # core/controller/report_manager.py
 
+from pathlib import Path
 import os
 from datetime import datetime
 import pandas as pd
-from core.utils.logger import log_info, log_error
+from core.utils.logger import init_logger, log_info, log_error
 from core.heavy_modules.reporting.report_builder import ReportBuilder
+from core.utils.prompt_builder import BuilderPrompt
+from core.controller.model_manager import ModelManager
 
 REPORT_DIR = "reports/"
+
+# Inicializar logger central del ReportManager
+logger = init_logger("ReportManager", Path(REPORT_DIR) / "report_manager.log")
 
 
 class ReportManager:
     """
-    Supervisa la generación completa del reporte (texto, gráficos, métricas y conclusiones).
-    Cada función documentada corresponde a un método público.
+    Administra la generación de reportes, incluyendo textos interpretativos,
+    métricas del modelo y visualizaciones.
     """
 
     def __init__(self):
-        if not os.path.exists(REPORT_DIR):
-            os.makedirs(REPORT_DIR)
-        self.builder = ReportBuilder()
+        os.makedirs(REPORT_DIR, exist_ok=True)
+
+        # Componentes del reporte
+        self.builder = ReportBuilder()  # No se pasa logger
         self.visualizations = []
+        self.prompt_builder = BuilderPrompt()
+        self.model_manager = ModelManager()
 
     # ---------------------------------------------------------------
-    # 1. Generar reporte completo
+    # Generación de texto interpretativo con el modelo Gemma
+    # ---------------------------------------------------------------
+    def generate_interpretative_text(self, data: pd.DataFrame) -> str:
+        try:
+            prompt = self.prompt_builder.build_report_prompt(data)
+            self.model_manager.load_fine_tuned_model()
+            response = self.model_manager.generate_from_prompt(prompt)
+            log_info(logger, "Texto interpretativo generado correctamente por el modelo.")
+            return response
+        except Exception as e:
+            log_error(logger, f"Error generando texto interpretativo: {e}")
+            return "No se pudo generar el texto interpretativo."
+
+    # ---------------------------------------------------------------
+    # Generación principal de reporte
     # ---------------------------------------------------------------
     def generate_report(self, data: pd.DataFrame, insights: dict, model_results: dict = None):
-        """
-        Crea un reporte a partir de los resultados del análisis.
-        data: DataFrame principal
-        insights: dict con secciones de texto
-        model_results: dict opcional con resultados de modelo para métricas
-        """
         try:
             self.builder.build_structure()
             self.builder.add_text_sections(insights)
             if model_results:
                 self.builder.insert_metrics(model_results)
-            log_info("Reporte generado correctamente.")
+            log_info(logger, "Reporte generado correctamente.")
             return self.builder.report
         except Exception as e:
-            log_error(f"Error generando el reporte: {e}")
+            log_error(logger, f"Error generando el reporte: {e}")
             raise
 
     # ---------------------------------------------------------------
-    # 2. Generar gráficos y visualizaciones
+    # Visualizaciones y secciones
     # ---------------------------------------------------------------
     def add_visualizations(self, chart_paths: list):
-        """
-        Genera gráficos y visualizaciones.
-        chart_paths: lista de rutas de imágenes o gráficos generados
-        """
         try:
             self.builder.embed_charts(chart_paths)
             self.visualizations.extend(chart_paths)
-            log_info(f"{len(chart_paths)} visualizaciones agregadas al reporte.")
+            log_info(logger, f"{len(chart_paths)} visualizaciones agregadas al reporte.")
         except Exception as e:
-            log_error(f"Error agregando visualizaciones: {e}")
+            log_error(logger, f"Error agregando visualizaciones: {e}")
             raise
 
-    # ---------------------------------------------------------------
-    # 3. Compilar secciones del reporte
-    # ---------------------------------------------------------------
     def compile_sections(self, analysis: dict, graphs: list, summary: dict):
-        """
-        Une los distintos componentes (texto, métricas, figuras) en el reporte.
-        """
         try:
             self.builder.add_text_sections(analysis)
             self.builder.embed_charts(graphs)
             if summary:
                 self.builder.insert_metrics(summary)
-            log_info("Secciones compiladas correctamente.")
+            log_info(logger, "Secciones compiladas correctamente.")
             return self.builder.report
         except Exception as e:
-            log_error(f"Error compilando secciones: {e}")
+            log_error(logger, f"Error compilando secciones: {e}")
             raise
 
     # ---------------------------------------------------------------
-    # 4. Exportar a PDF
+    # Exportación
     # ---------------------------------------------------------------
     def export_to_pdf(self, filename: str = None):
-        """
-        Exporta el reporte final a PDF.
-        """
         try:
             if filename is None:
                 filename = os.path.join(REPORT_DIR, self.auto_name_report("pdf"))
             self.builder.finalize_report(export_format="pdf", filename=filename.replace(".pdf", ""))
-            log_info(f"Reporte exportado a PDF: {filename}")
+            log_info(logger, f"Reporte exportado a PDF: {filename}")
             return filename
         except Exception as e:
-            log_error(f"Error exportando PDF: {e}")
+            log_error(logger, f"Error exportando PDF: {e}")
             raise
 
-    # ---------------------------------------------------------------
-    # 5. Exportar a Excel
-    # ---------------------------------------------------------------
     def export_to_excel(self, filename: str = None):
-        """
-        Exporta el reporte final a Excel.
-        """
         try:
             if filename is None:
                 filename = os.path.join(REPORT_DIR, self.auto_name_report("xlsx"))
             self.builder.finalize_report(export_format="excel", filename=filename.replace(".xlsx", ""))
-            log_info(f"Reporte exportado a Excel: {filename}")
+            log_info(logger, f"Reporte exportado a Excel: {filename}")
             return filename
         except Exception as e:
-            log_error(f"Error exportando Excel: {e}")
+            log_error(logger, f"Error exportando Excel: {e}")
             raise
 
     # ---------------------------------------------------------------
-    # 6. Agregar metadata
+    # Metadata
     # ---------------------------------------------------------------
     def append_metadata(self, info: dict):
-        """
-        Añade metadatos del modelo, dataset y ejecución al reporte.
-        """
         try:
             self.builder.report["metadata"].update(info)
-            log_info("Metadata agregada al reporte.")
+            log_info(logger, "Metadata agregada al reporte.")
         except Exception as e:
-            log_error(f"Error agregando metadata: {e}")
+            log_error(logger, f"Error agregando metadata: {e}")
             raise
 
     # ---------------------------------------------------------------
-    # 7. Nombre automático del archivo
+    # Nombre automático de reportes
     # ---------------------------------------------------------------
     def auto_name_report(self, ext: str = "pdf"):
-        """
-        Genera automáticamente el nombre del archivo de salida.
-        """
         return f"report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{ext}"

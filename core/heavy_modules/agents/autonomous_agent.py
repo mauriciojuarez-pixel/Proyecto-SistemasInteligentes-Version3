@@ -1,15 +1,15 @@
-from utils.logger import log_info, log_error
+#core/heavy_modules/agents/autonomous_agent.py
+
+from core.utils.logger import init_logger, log_info, log_error
 from core.heavy_modules.agents.chain_manager import ChainManager
 from core.heavy_modules.agents.memory_manager import MemoryManager
 from transformers import pipeline
 import pandas as pd
 import numpy as np
 
-class AutonomousAgent:
-    """
-    Agente autónomo responsable de planificar, analizar y sintetizar información.
-    """
+logger = init_logger("AutonomousAgent")
 
+class AutonomousAgent:
     def __init__(self, session_id: str = "default_session"):
         try:
             self.session_id = session_id
@@ -17,10 +17,13 @@ class AutonomousAgent:
             self.chain_manager = ChainManager()
             self.model = pipeline("text-generation", model="data/models/gemma_2b_it_finetuned")
             self.last_analysis = None
-            log_info(f"AutonomousAgent iniciado para sesión {session_id}.")
+            log_info(logger, f"AutonomousAgent iniciado para sesión {session_id}.")
         except Exception as e:
-            log_error(f"Error al inicializar AutonomousAgent: {e}")
+            log_error(logger, f"Error al inicializar AutonomousAgent: {e}")
             raise
+
+    # En todos los métodos, cambiar log_info/log_error por log_info(logger, ...) y log_error(logger, ...)
+
 
     def plan_actions(self, goal: str):
         """

@@ -1,12 +1,13 @@
-# chain_manager.py
+#core/heavy_modules/agents/chain_manager.py
 
 from langchain_community.llms import huggingface_pipeline
 from langchain_core.prompts import PromptTemplate
 from langchain_classic.chains.llm import LLMChain
 from langchain_classic.chains.sequential import SimpleSequentialChain
-from utils.logger import log_info, log_error
 from transformers import pipeline
 
+from core.utils.logger import init_logger, log_info, log_error
+logger = init_logger("ChainManager")
 
 class ChainManager:
     """
@@ -28,7 +29,7 @@ class ChainManager:
 
             self.memory_context = {}
             self.trace = []
-            log_info("ChainManager inicializado correctamente con HuggingFacePipeline.")
+            log_info(logger, "ChainManager inicializado correctamente con HuggingFacePipeline.")
         except Exception as e:
             log_error(f"Error inicializando ChainManager: {e}")
             raise

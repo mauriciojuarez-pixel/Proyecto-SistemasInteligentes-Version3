@@ -1,7 +1,13 @@
+# core/heavy_modules/fine_tuning/train_model.py
+
 import torch
 from transformers import AutoModelForCausalLM, Trainer, TrainingArguments
-from utils.logger import log_info, log_error
+from core.utils.logger import init_logger, log_info, log_error
 from pathlib import Path
+import json
+
+logger = init_logger("TrainModel")
+
 
 def initialize_trainer(model_name: str, train_dataset, eval_dataset, output_dir: str = "models/fine_tuned"):
     """
@@ -31,11 +37,12 @@ def initialize_trainer(model_name: str, train_dataset, eval_dataset, output_dir:
             eval_dataset=eval_dataset
         )
 
-        log_info(f"Trainer inicializado correctamente con modelo: {model_name}")
+        log_info(logger, f"Trainer inicializado correctamente con modelo: {model_name}")
         return trainer
     except Exception as e:
-        log_error(f"Error al inicializar Trainer: {e}")
+        log_error(logger, f"Error al inicializar Trainer: {e}")
         raise
+
 
 def train(trainer, epochs: int = 3):
     """
@@ -43,12 +50,13 @@ def train(trainer, epochs: int = 3):
     """
     try:
         trainer.args.num_train_epochs = epochs
-        log_info(f"Iniciando entrenamiento por {epochs} épocas...")
+        log_info(logger, f"Iniciando entrenamiento por {epochs} épocas...")
         trainer.train()
-        log_info("Entrenamiento finalizado exitosamente.")
+        log_info(logger, "Entrenamiento finalizado exitosamente.")
     except Exception as e:
-        log_error(f"Error durante el entrenamiento: {e}")
+        log_error(logger, f"Error durante el entrenamiento: {e}")
         raise
+
 
 def track_progress(trainer):
     """
@@ -56,22 +64,22 @@ def track_progress(trainer):
     """
     try:
         logs = trainer.state.log_history
-        log_info(f"Progreso del entrenamiento capturado: {len(logs)} entradas.")
+        log_info(logger, f"Progreso del entrenamiento capturado: {len(logs)} entradas.")
         return logs
     except Exception as e:
-        log_error(f"Error al obtener progreso del entrenamiento: {e}")
+        log_error(logger, f"Error al obtener progreso del entrenamiento: {e}")
         raise
+
 
 def log_results(logs, output_file: str = "reports/training/training_log.json"):
     """
     Guarda los logs del entrenamiento en un archivo JSON.
     """
-    import json
     try:
         Path(output_file).parent.mkdir(parents=True, exist_ok=True)
         with open(output_file, "w", encoding="utf-8") as f:
             json.dump(logs, f, indent=4)
-        log_info(f"Resultados del entrenamiento guardados en {output_file}")
+        log_info(logger, f"Resultados del entrenamiento guardados en {output_file}")
     except Exception as e:
-        log_error(f"Error al guardar logs de entrenamiento: {e}")
+        log_error(logger, f"Error al guardar logs de entrenamiento: {e}")
         raise

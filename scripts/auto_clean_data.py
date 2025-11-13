@@ -2,29 +2,21 @@
 """
 Módulo: auto_clean_data.py
 Descripción:
-    Automatiza la limpieza de datasets (CSV, XLSX) ubicados en data/datasets/raw/
-    y guarda los resultados procesados en data/datasets/processed/.
+    Limpieza automática de datasets ubicados en data/datasets/raw/
+    y guardado en data/datasets/processed/ usando DataManager del core.
 
-Flujo:
-    1. Escanea data/datasets/raw/ en busca de nuevos archivos.
-    2. Aplica limpieza básica (valores nulos, duplicados, tipos de datos, outliers).
-    3. Estandariza nombres de columnas.
-    4. Exporta los datos procesados.
+Funciones principales:
+    - scan_raw_folder(): busca archivos nuevos en raw/
+    - clean_dataset(file_path): limpia y guarda cada dataset
+    - log_cleaning_results(): mantiene registro de la limpieza
 """
 
-import sys
 from pathlib import Path
-from datetime import datetime
 import logging
+import sys
 import pandas as pd
 
-from core.utils.data_cleaner import (
-    remove_nulls,
-    remove_duplicates,
-    normalize_columns,
-    detect_noise,
-    save_clean_data
-)
+from core.controller.data_manager import DataManager
 
 # --- Configuración de paths ---
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -51,51 +43,53 @@ def log(message: str, level="info"):
         logging.error(message)
         print(message)
 
-def ensure_directories():
-    PROCESSED_DATA_DIR.mkdir(parents=True, exist_ok=True)
-    log("[INFO] Directorio de datos procesados verificado/creado.")
+# --- Instanciar DataManager ---
+data_manager = DataManager()
 
-def clean_file(file_path: Path):
-    """Aplica limpieza completa a un archivo individual (CSV o XLSX)."""
+# -------------------------------------------------------------------------
+# Funciones principales
+# -------------------------------------------------------------------------
+def scan_raw_folder():
+    """Busca archivos CSV y XLSX en raw/"""
+    files = list(RAW_DATA_DIR.glob("*.csv")) + list(RAW_DATA_DIR.glob("*.xlsx"))
+    return files
+
+def clean_dataset(file_path: Path):
+    """Limpia y guarda un dataset usando DataManager"""
     try:
         log(f"[INFO] Procesando archivo: {file_path.name}")
 
         # Cargar dataset
-        if file_path.suffix.lower() == ".csv":
-            df = pd.read_csv(file_path)
-        elif file_path.suffix.lower() in [".xlsx", ".xls"]:
-            df = pd.read_excel(file_path)
-        else:
-            log(f"[WARN] Tipo de archivo no soportado: {file_path.suffix}", level="warning")
-            return
+        df = pd.read_csv(file_path) if file_path.suffix.lower() == ".csv" else pd.read_excel(file_path)
 
-        # Limpieza de datos
-        df = remove_nulls(df, strategy="mean")
-        df = remove_duplicates(df)
-        df = normalize_columns(df)
-        df = detect_noise(df, z_thresh=3)
+        # Limpieza usando core
+        df_clean = data_manager.clean_data(df)
 
-        # Guardar archivo limpio
+        # Guardar dataset limpio
         output_file = PROCESSED_DATA_DIR / file_path.name
-        save_clean_data(df, output_file)
+        data_manager.save_processed(df_clean, file_path.name)
         log(f"[INFO] Archivo limpio guardado en: {output_file}")
+
     except Exception as e:
         log(f"[ERROR] Error procesando {file_path.name}: {e}", level="error")
 
 def clean_all_files():
-    ensure_directories()
+    """Itera todos los archivos nuevos y aplica limpieza automática"""
+    PROCESSED_DATA_DIR.mkdir(parents=True, exist_ok=True)
     log("=== Iniciando limpieza automática de datasets ===")
 
-    files = list(RAW_DATA_DIR.glob("*.*"))
+    files = scan_raw_folder()
     if not files:
         log("[WARN] No se encontraron archivos en raw/", level="warning")
         return
 
     for file_path in files:
-        clean_file(file_path)
+        clean_dataset(file_path)
 
     log("=== Limpieza automática completada ===")
 
-# --- Ejecución ---
+# -------------------------------------------------------------------------
+# Ejecución directa
+# -------------------------------------------------------------------------
 if __name__ == "__main__":
     clean_all_files()
