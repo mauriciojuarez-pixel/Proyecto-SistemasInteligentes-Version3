@@ -1,0 +1,6 @@
+data/
+data/models/gemma_2b_it_base/
+venv/
+.env
+__pycache__/
+*.pyc
