@@ -1,0 +1,79 @@
+# 1. agent_controller.py
+
+Coordina todo el flujo del sistema inteligente. Controla hilos, estados, delegación de tareas y ejecución del pipeline completo.  
+Gestiona la interacción entre DataManager, ModelManager, ReportManager y el agente autónomo.
+
+## Funciones / Métodos
+
+| Método | Descripción |
+|--------|-------------|
+| `__init__()` | Inicializa el controlador, configurando estado, subcontroladores y el agente autónomo. |
+| `initialize_agent()` | Crea e inicializa el agente LangChain con memoria, contexto y cadenas internas. |
+| `run_pipeline(file_path: str)` | Ejecuta el pipeline completo (cargar → limpiar → analizar → entrenar → reportar) en un hilo separado. |
+| `delegate_task(task_name: str, params: dict)` | Deriva tareas específicas hacia DataManager, ModelManager o ReportManager. |
+| `monitor_progress()` | Devuelve en texto el estado actual del agente (IDLE, RUNNING, TRAINING, ERROR). |
+| `get_agent_state()` | Retorna el estado interno del agente autónomo. |
+| `reset_agent()` | Reinicia el agente, borra memoria y limpia contexto. |
+
+---
+
+# 2. data_manager.py
+
+Realiza la carga, limpieza, validación, división y guardado de datasets.  
+Es el módulo central para el preprocesamiento antes del fine-tuning.
+
+## Funciones / Métodos
+
+| Método | Descripción |
+|--------|-------------|
+| `__init__(schema_path: str, processed_dir: str)` | Configura rutas para validación y guardado de datos limpios. |
+| `detect_file_type(file_path: str)` | Identifica si el archivo es CSV o Excel. |
+| `load_data(file_path: str)` | Carga CSV con múltiples encodings o Excel a un DataFrame. |
+| `validate_structure(df: pd.DataFrame)` | Valida columnas usando un archivo JSON Schema. |
+| `clean_data(df, fill_strategy="mean", remove_outliers=True)` | Limpia el dataset usando las funciones de `data_cleaner`: estandarización, nulos, duplicados y outliers. |
+| `split_data(df, test_size=0.2)` | Divide el dataset en entrenamiento/validación. |
+| `save_processed(df, filename: str)` | Guarda el dataset procesado en la carpeta definida. |
+| `summarize_dataset(df)` | Crea un resumen estadístico completo del dataset. |
+
+---
+
+# 3. model_manager.py
+
+Controla todo el ciclo de vida del modelo Gemma: carga, preparación de datos, fine-tuning, evaluación, versionado y rollback.
+
+## Funciones / Métodos
+
+| Método | Descripción |
+|--------|-------------|
+| `__init__(model_dir="models/")` | Configura ruta, versiones y carga inicial opcional del modelo. |
+| `load_model(version: str)` | Carga un checkpoint del modelo Gemma en base a número de versión. |
+| `prepare_data_for_finetuning(df)` | Aplica limpieza, tokenización, balanceo y split usando módulos heavy de preparación. |
+| `fine_tune(data_path: str, epochs=3, batch_size=4)` | Ejecuta todo el proceso de fine-tuning y guarda un nuevo checkpoint. |
+| `evaluate_model(metrics: list)` | Evalúa el modelo generando métricas de rendimiento. |
+| `compare_versions(old: str, new: str)` | Compara dos versiones del modelo y genera un informe de diferencias. |
+| `save_model_checkpoint(name: str)` | Guarda el modelo actual como una versión nueva. |
+| `load_fine_tuned_model()` | Carga la última versión disponible fine-tuneada. |
+| `rollback_to_previous_version()` | Revierte el modelo a la versión anterior. |
+| `generate_from_prompt(prompt: str)` | Genera texto usando el modelo cargado (autocompletado / generación semántica). |
+
+---
+
+# 4. report_manager.py
+
+Genera reportes completos combinando texto interpretativo, gráficos, métricas y visualizaciones.  
+Puede exportar a PDF y Excel.
+
+## Funciones / Métodos
+
+| Método | Descripción |
+|--------|-------------|
+| `__init__(model_manager, prompt_builder)` | Inicializa manager de reportes con acceso al modelo y al generador de prompts. |
+| `generate_interpretative_text(data: dict)` | Usa el modelo para crear texto interpretativo sobre el análisis. |
+| `generate_report(data, insights, model_results)` | Construye la estructura completa del reporte. |
+| `add_visualizations(chart_paths: list)` | Agrega gráficos al reporte ya generado. |
+| `compile_sections(analysis, graphs, summary)` | Consolida texto, visualizaciones y tablas en un único documento. |
+| `export_to_pdf(filename: str)` | Exporta el reporte final como archivo PDF. |
+| `export_to_excel(filename: str)` | Genera un reporte estructurado en formato Excel. |
+| `append_metadata(info: dict)` | Agrega metadatos como fecha, usuario, versión del modelo. |
+| `auto_name_report(ext="pdf")` | Genera un nombre automático basado en timestamp. |
+

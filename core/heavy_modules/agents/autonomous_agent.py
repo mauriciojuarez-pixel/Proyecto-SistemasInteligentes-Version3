@@ -1,13 +1,15 @@
-#core/heavy_modules/agents/autonomous_agent.py
+# core/heavy_modules/agents/autonomous_agent.py
 
 from core.utils.logger import init_logger, log_info, log_error
 from core.heavy_modules.agents.chain_manager import ChainManager
 from core.heavy_modules.agents.memory_manager import MemoryManager
+from core.utils.prompt_builder import BuilderPrompt
 from transformers import pipeline
 import pandas as pd
 import numpy as np
 
 logger = init_logger("AutonomousAgent")
+
 
 class AutonomousAgent:
     def __init__(self, session_id: str = "default_session"):
@@ -15,96 +17,65 @@ class AutonomousAgent:
             self.session_id = session_id
             self.memory = MemoryManager()
             self.chain_manager = ChainManager()
-            self.model = pipeline("text-generation", model="data/models/gemma_2b_it_finetuned")
+
+            # Modelo de generación de texto (Gemma local)
+            self.model = pipeline(
+                "text-generation",
+                model="data/models/gemma_2b_it_base/models--google--gemma-2b-it/snapshots/96988410cbdaeb8d5093d1ebdc5a8fb563e02bad"
+            )
+
+            # Variables internas para mantener estado
             self.last_analysis = None
+            self.last_analysis_df = None
+
             log_info(logger, f"AutonomousAgent iniciado para sesión {session_id}.")
         except Exception as e:
             log_error(logger, f"Error al inicializar AutonomousAgent: {e}")
             raise
 
-    # En todos los métodos, cambiar log_info/log_error por log_info(logger, ...) y log_error(logger, ...)
-
-
-    def plan_actions(self, goal: str):
-        """
-        Define una secuencia de acciones para alcanzar el objetivo indicado.
-        """
-        try:
-            plan = [
-                f"1. Analizar datos relacionados con: {goal}",
-                "2. Identificar patrones relevantes.",
-                "3. Generar un resumen técnico del análisis.",
-                "4. Evaluar la coherencia de los hallazgos.",
-                "5. Guardar resultados y optimizar parámetros."
-            ]
-            log_info(f"Plan generado para objetivo '{goal}'.")
-            return plan
-        except Exception as e:
-            log_error(f"Error al planificar acciones: {e}")
-            raise
-
     def analyze_data(self, df: pd.DataFrame):
         """
-        Analiza un DataFrame y genera hallazgos clave.
+        Analiza un DataFrame completo y genera hallazgos.
         """
         try:
-            description = df.describe(include="all").to_string()
-            response = self.chain_manager.execute_chain(description)
+            # Guardar copia del DataFrame usado durante el análisis
+            self.last_analysis_df = df.copy()
+
+            # Ejecutar cadena de análisis con todo el DataFrame
+            response = self.chain_manager.execute_chain(df=df)
+
+            # Guardar análisis en memoria temporal del agente
             self.last_analysis = response
             self.memory.store_context(self.session_id, {"analysis": response})
-            log_info("Análisis de datos completado correctamente.")
+
+            log_info(logger, "Análisis de datos completado correctamente con todos los datos del DataFrame.")
             return response
+
         except Exception as e:
-            log_error(f"Error durante el análisis de datos: {e}")
+            log_error(logger, f"Error durante el análisis de datos: {e}")
             raise
 
-    def decide_next_step(self):
+    def generate_summary(self, analysis_results: dict):
         """
-        Decide el siguiente paso basándose en el contexto y resultados previos.
-        """
-        try:
-            context = self.memory.recall_context(self.session_id)
-            if not context or "analysis" not in context:
-                next_step = "Realizar nuevo análisis de datos."
-            else:
-                next_step = "Generar reporte o pasar a fase de optimización."
-            log_info(f"Siguiente paso decidido: {next_step}")
-            return next_step
-        except Exception as e:
-            log_error(f"Error al decidir siguiente paso: {e}")
-            raise
-
-    def generate_summary(self, analysis: dict):
-        """
-        Genera un resumen textual basado en los resultados del análisis.
+        Genera un reporte final basado en:
+        - El DataFrame original usado en el análisis
+        - Los resultados generados por la cadena LLM
         """
         try:
-            text_input = str(analysis)
-            summary = self.model(text_input, max_length=250, num_return_sequences=1)[0]["generated_text"]
-            log_info("Resumen generado exitosamente.")
-            return summary
+            prompt_builder = BuilderPrompt()
+
+            # Construcción correcta del prompt
+            prompt = prompt_builder.build_report_prompt(
+                df=self.last_analysis_df,     # DataFrame original
+                metadata=analysis_results     # Resultados del análisis
+            )
+
+            # Ejecutar prompt directamente en la chain
+            response = self.chain_manager.execute_prompt(prompt)
+
+            log_info(logger, "Resumen generado correctamente.")
+            return response
+
         except Exception as e:
-            log_error(f"Error al generar resumen: {e}")
-            raise
-
-    def self_optimize(self):
-        """
-        Ajusta internamente los parámetros según los resultados previos.
-        """
-        try:
-            context = self.memory.recall_context(self.session_id)
-            if not context:
-                log_info("No hay contexto previo para optimización.")
-                return "Sin contexto previo."
-
-            adjustments = {
-                "learning_rate": np.random.choice([3e-5, 5e-5, 7e-5]),
-                "batch_size": np.random.choice([2, 4, 8])
-            }
-
-            self.memory.store_context(self.session_id, {"optim_params": adjustments})
-            log_info(f"Parámetros ajustados: {adjustments}")
-            return adjustments
-        except Exception as e:
-            log_error(f"Error al optimizar agente: {e}")
+            log_error(logger, f"Error al generar resumen: {e}")
             raise

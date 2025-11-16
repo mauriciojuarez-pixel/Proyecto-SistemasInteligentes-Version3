@@ -48,14 +48,32 @@ class DataManager:
     # 2. Cargar datos
     # ---------------------------------------------------------------
     def load_data(self, file_path: str) -> pd.DataFrame:
+        """Carga un dataset CSV o Excel intentando distintos encodings si es CSV"""
         file_type = self.detect_file_type(file_path)
         log_info(logger, f"Cargando dataset desde {file_path} ({file_type})")
+
         try:
-            df = pd.read_csv(file_path) if file_type == "csv" else pd.read_excel(file_path)
+            if file_type == "csv":
+                # Intentar distintos encodings en orden
+                for enc in ("utf-8", "latin-1", "cp1252"):
+                    try:
+                        df = pd.read_csv(file_path, encoding=enc)
+                        log_info(logger, f"Archivo CSV cargado con encoding '{enc}'")
+                        break
+                    except UnicodeDecodeError:
+                        log_info(logger, f"Fallo con encoding '{enc}', intentando siguiente...")
+                else:
+                    raise UnicodeDecodeError("No se pudo decodificar el archivo con encodings probados.")
+            else:
+                # Para Excel no se suele necesitar cambio de encoding
+                df = pd.read_excel(file_path)
+                log_info(logger, "Archivo Excel cargado correctamente")
         except Exception as e:
             log_error(logger, f"Error al cargar el archivo: {e}")
             raise RuntimeError(f"No se pudo cargar el archivo: {e}")
+
         return df
+
 
     # ---------------------------------------------------------------
     # 3. Validación de estructura

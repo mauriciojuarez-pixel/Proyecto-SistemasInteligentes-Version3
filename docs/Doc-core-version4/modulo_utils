@@ -1,0 +1,135 @@
+# Documentación Técnica — Módulo `core/utils/`
+
+## Descripción general
+
+El directorio `core/utils/` contiene todas las utilidades transversales utilizadas por el sistema.  
+Su objetivo principal es proporcionar funciones de soporte para:
+
+- Inspección y clasificación semántica de columnas.
+- Limpieza y normalización de datos.
+- Gestión y validación de archivos.
+- Simulación del modelo Gemma 2B IT.
+- Construcción estructurada de prompts.
+- Registro centralizado y consistente de logs.
+- Funciones auxiliares generales.
+- Medición de tiempos y rendimiento.
+
+Este módulo permite que los distintos componentes del sistema mantengan un flujo coherente, limpio y estandarizado en todas las operaciones.
+
+---
+
+# 1. column_inspector.py
+
+Analiza un DataFrame y determina el **rol semántico** de cada columna según su nombre y tipo de datos.
+
+## Funciones
+
+| Función | Descripción |
+|--------|-------------|
+| `infer_column_roles(df)` | Evalúa cada columna para determinar su rol: fechas, montos, cantidades, categorías, entre otros. Devuelve un diccionario `{columna: rol}` basado en heurísticas y tipo de dato. |
+
+---
+
+# 2. data_cleaner.py
+
+Proporciona herramientas de preprocesamiento y limpieza de datos antes de análisis o modelado.
+
+## Funciones
+
+| Función | Descripción |
+|--------|-------------|
+| `remove_nulls(df, strategy="mean")` | Rellena valores nulos en columnas numéricas usando media o mediana. |
+| `remove_duplicates(df)` | Elimina filas duplicadas. |
+| `normalize_columns(df)` | Convierte nombres de columnas a formato estandarizado (lowercase, sin espacios). |
+| `detect_noise(df, z_thresh=3)` | Detecta y elimina outliers mediante Z-score. |
+| `save_clean_data(df, path, index=False)` | Guarda el DataFrame limpio en formato CSV o Excel dependiendo de la extensión. |
+
+---
+
+# 3. file_manager.py
+
+Administra la carga, verificación y almacenamiento de archivos de entrada y salida.
+
+## Funciones
+
+| Función | Descripción |
+|--------|-------------|
+| `validate_path(path, create=False)` | Valida si el directorio existe y opcionalmente lo crea. |
+| `load_csv(file_path)` | Carga un archivo CSV como DataFrame. |
+| `load_excel(file_path)` | Carga un archivo Excel como DataFrame. |
+| `save_file(df, file_path, index=False)` | Guarda el DataFrame como CSV o Excel según la extensión del archivo. |
+| `get_filename(file_path)` | Retorna solo el nombre del archivo sin extensión. |
+
+---
+
+# 4. gemma.py
+
+Interfaz simulada para Gemma 2B IT. Genera análisis estructurados con fines de prueba, mock o desarrollo.
+
+## Clase: `Gemma2BIT`
+
+| Método | Descripción |
+|--------|-------------|
+| `generate(prompt)` | Produce un análisis detallado dividido por columnas y un resumen general, incluyendo métricas, patrones y recomendaciones. |
+
+---
+
+# 5. helpers.py
+
+Conjunto de utilidades genéricas utilizadas en distintos componentes del sistema.
+
+## Funciones
+
+| Función | Descripción |
+|--------|-------------|
+| `format_number(num, decimals=2)` | Formatea un número con cierta cantidad de decimales. |
+| `format_date(date, fmt="%Y-%m-%d")` | Formatea un objeto datetime según el formato deseado. |
+| `generate_id(prefix="id")` | Genera un identificador único basado en UUID. |
+| `safe_division(a, b)` | Devuelve `a / b`, pero retorna 0 si ocurre división por cero. |
+| `normalize_string(text)` | Normaliza cadenas: minúsculas, sin espacios y sin caracteres especiales. |
+
+---
+
+# 6. logger.py
+
+Sistema centralizado de logging que asegura uniformidad en los registros de toda la aplicación.
+
+## Funciones
+
+| Función | Descripción |
+|--------|-------------|
+| `init_logger(name, log_file=None)` | Crea un logger con formato estándar y salida tanto a consola como a archivo. |
+| `log_info(logger, message)` | Registra mensajes de nivel INFO. |
+| `log_warning(logger, message)` | Registra mensajes de nivel WARNING. |
+| `log_error(logger, message)` | Registra mensajes de nivel ERROR. |
+
+---
+
+# 7. prompt_builder.py
+
+Construye prompts avanzados para alimentar a Gemma 2B IT, incluyendo análisis de metadatos y roles de columna.
+
+## Clase: `BuilderPrompt`
+
+| Método | Descripción |
+|--------|-------------|
+| `build_report_prompt(df, metadata=None)` | Genera un prompt completo con: metadata, roles inferidos de columnas, instrucciones de análisis, y estructura profesional para reportes automáticos. |
+
+---
+
+# 8. time_utils.py
+
+Incluye herramientas de medición de tiempos y evaluación de rendimiento.
+
+## Funciones
+
+| Función | Descripción |
+|--------|-------------|
+| `start_timer()` | Inicia un temporizador. |
+| `stop_timer(start_time)` | Calcula el tiempo transcurrido desde el inicio. |
+| `elapsed_time(start_time, logger=None, task_name="Tarea")` | Registra y devuelve la duración de una tarea. |
+| `log_execution_time(task_name="Tarea", logger=None)` | Context manager que mide automáticamente el tiempo de una operación y lo registra. |
+
+---
+
+Fin del documento.

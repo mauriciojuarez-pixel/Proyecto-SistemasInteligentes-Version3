@@ -12,7 +12,7 @@ import sys
 import torch
 from core.controller.data_manager import DataManager
 from core.controller.model_manager import ModelManager
-from core.utils.logger.logger import init_logger
+from core.utils.logger import init_logger
 
 # --- Paths y configuración ---
 BASE_DIR = Path(__file__).resolve().parent.parent

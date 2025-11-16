@@ -37,9 +37,10 @@ class ModelManager:
     carga, fine-tuning, evaluación y versionado.
     """
 
-    def __init__(self):
+    def __init__(self, tokenizer=None):
         self.model = None
         self.current_version = None
+        self.tokenizer = tokenizer  # Inyección de dependencia opcional
         self._ensure_registry()
 
     def _ensure_registry(self):
@@ -182,18 +183,24 @@ class ModelManager:
     # 9. Generar texto a partir de un prompt
     # ---------------------------------------------------------------
     def generate_from_prompt(self, prompt: str, max_tokens: int = 512, temperature: float = 0.7) -> str:
-        try:
-            if not self.model:
-                self.load_fine_tuned_model()
+        if self.model is None:
+            raise RuntimeError(
+                "No hay modelo cargado. Llama a load_model() o load_fine_tuned_model() primero."
+            )
 
+        try:
+            # Caso para modelos que tienen método nativo generate_text
             if hasattr(self.model, "generate_text"):
                 output = self.model.generate_text(prompt, max_tokens=max_tokens, temperature=temperature)
             else:
-                from transformers import AutoTokenizer
-                tokenizer = AutoTokenizer.from_pretrained("ruta_a_modelo_o_cache_local")
-                inputs = tokenizer(prompt, return_tensors="pt")
+                # Usar tokenizer inyectado o crear uno nuevo si no se pasó
+                if self.tokenizer is None:
+                    from transformers import AutoTokenizer
+                    self.tokenizer = AutoTokenizer.from_pretrained("ruta_a_modelo_o_cache_local")
+                
+                inputs = self.tokenizer(prompt, return_tensors="pt")
                 outputs = self.model.generate(**inputs, max_new_tokens=max_tokens)
-                output = tokenizer.decode(outputs[0], skip_special_tokens=True)
+                output = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
 
             log_info(logger, "Texto generado correctamente a partir del prompt.")
             return output

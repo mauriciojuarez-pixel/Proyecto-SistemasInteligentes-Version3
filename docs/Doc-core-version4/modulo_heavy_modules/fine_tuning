@@ -1,0 +1,82 @@
+# Documentación Técnica — Módulo `core/heavy_modules/fine_tuning/`
+
+Este módulo contiene todas las herramientas necesarias para preparar datos, entrenar modelos, evaluar resultados y administrar checkpoints del proceso de fine-tuning.
+
+Incluye cuatro componentes principales:
+
+- `data_preparation.py` — Limpieza, tokenización, balanceo y división de datos.
+- `evaluate_model.py` — Cálculo de métricas y reportes de evaluación.
+- `model_saver.py` — Gestión de versiones y checkpoints del modelo.
+- `train_model.py` — Configuración e implementación del entrenamiento supervisado.
+
+---
+
+# 1. data_preparation.py
+
+Incluye funciones clave para procesar datasets antes de entrenar un modelo, garantizando calidad, consistencia y compatibilidad con el tokenizador.
+
+## Funciones
+
+| Función | Descripción |
+|--------|-------------|
+| `clean_training_data(df)` | Limpia el dataset: elimina nulos, elimina duplicados y normaliza columnas. |
+| `tokenize_texts(df, text_col, tokenizer_name, max_length)` | Tokeniza los textos usando el tokenizador de Gemma; devuelve `input_ids` y `attention_mask`. |
+| `balance_classes(df, label_col)` | Realiza oversampling para equilibrar las clases del dataset. |
+| `split_train_test(df, test_size, random_state)` | Divide el dataset en entrenamiento y prueba usando `train_test_split`. |
+
+---
+
+# 2. evaluate_model.py
+
+Proporciona utilidades para evaluar el rendimiento del modelo y generar reportes comparativos o exportables.
+
+## Funciones
+
+| Función | Descripción |
+|--------|-------------|
+| `compute_metrics(pred)` | Calcula métricas de accuracy y F1-score a partir de predicciones del Trainer. |
+| `compare_with_baseline(new_results, baseline_results)` | Compara el rendimiento actual con métricas previas (baseline). |
+| `generate_evaluation_report(metrics, output_file)` | Genera un archivo JSON con los resultados de evaluación. |
+
+---
+
+# 3. model_saver.py
+
+Administra versiones del modelo fine-tuned, incluyendo almacenamiento, carga y limpieza de checkpoints antiguos.
+
+## Funciones
+
+| Función | Descripción |
+|--------|-------------|
+| `save_checkpoint(trainer, output_dir, version)` | Guarda un checkpoint completo del modelo entrenado. |
+| `list_model_versions(model_dir)` | Lista todas las versiones guardadas en la carpeta de checkpoints. |
+| `load_checkpoint(version, model_dir)` | Carga un modelo desde una versión específica del checkpoint. |
+| `delete_old_models(model_dir, keep_last)` | Elimina versiones antiguas conservando solo las N más recientes. |
+
+---
+
+# 4. train_model.py
+
+Define la configuración del entrenamiento, inicializa el Trainer de Hugging Face y gestiona logs y progreso del proceso de fine-tuning.
+
+## Funciones
+
+| Función | Descripción |
+|--------|-------------|
+| `initialize_trainer(model_name, train_dataset, eval_dataset, output_dir)` | Inicializa un `Trainer` configurado para entrenamiento supervisado. |
+| `train(trainer, epochs)` | Ejecuta el entrenamiento actualizando el número de épocas. |
+| `track_progress(trainer)` | Retorna los registros del progreso del entrenamiento (`log_history`). |
+| `log_results(logs, output_file)` | Guarda los logs del entrenamiento en un archivo JSON. |
+
+---
+
+# Resumen General del Módulo
+
+| Componente | Propósito |
+|-----------|-----------|
+| **DataPreparation** | Limpieza, tokenización, balanceo y división del dataset. |
+| **EvaluateModel** | Evaluación del modelo y generación de métricas/reportes. |
+| **ModelSaver** | Guardado, carga y administración de versiones del modelo entrenado. |
+| **TrainModel** | Configuración y ejecución del entrenamiento con Hugging Face. |
+
+---

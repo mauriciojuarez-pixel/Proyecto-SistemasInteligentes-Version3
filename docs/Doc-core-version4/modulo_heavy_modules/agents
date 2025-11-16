@@ -1,0 +1,75 @@
+# Documentación Técnica — Módulo `core/heavy_modules/agents`
+
+Este módulo implementa la capa de agentes autónomos, incluyendo:  
+- Un agente autónomo capaz de analizar datos, razonar y optimizarse.  
+- Un gestor de cadenas LangChain para razonamiento secuencial.  
+- Un manejador de memoria persistente entre sesiones.
+
+---
+
+# 1. autonomous_agent.py
+
+Implementa un **agente autónomo completo**, con capacidad de análisis de datos, planificación, generación de resúmenes, toma de decisiones y auto-optimización.  
+Integra memoria persistente y cadenas de razonamiento mediante LangChain.
+
+## Funciones / Métodos
+
+| Método | Descripción |
+|--------|-------------|
+| `__init__(session_id="default_session")` | Inicializa el agente, cargando memoria, gestor de cadenas y modelo Gemma fine-tuneado. |
+| `plan_actions(goal: str)` | Genera un plan estructurado de pasos para alcanzar un objetivo dado. |
+| `analyze_data(df: pd.DataFrame)` | Analiza un DataFrame usando `describe()`, pasa el análisis por LangChain y lo almacena en memoria. |
+| `decide_next_step()` | Determina cuál debe ser la siguiente acción del agente según contexto previo. |
+| `generate_summary(analysis: dict)` | Genera un resumen técnico usando el modelo Gemma finetuneado. |
+| `self_optimize()` | Ajusta parámetros internos (learning rate, batch size) en base al contexto previo almacenado. |
+
+---
+
+# 2. chain_manager.py
+
+Administra cadenas de razonamiento usando **LangChain**, permitiendo análisis y resumen técnico automatizado mediante un pipeline de HuggingFace.
+
+## Funciones / Métodos
+
+| Método | Descripción |
+|--------|-------------|
+| `__init__(model_path="data/models/gemma_2b_it_finetuned")` | Crea un pipeline de generación de texto con HuggingFace y lo adapta a LangChain. |
+| `build_chain()` | Construye una cadena secuencial: análisis → resumen técnico, usando dos LLMChain. |
+| `execute_chain(data: str)` | Ejecuta la cadena completa sobre los datos proporcionados. |
+| `inject_context(memory: dict)` | Inserta contexto adicional proveniente del agente para influir en el razonamiento. |
+| `trace_chain()` | Devuelve un registro paso a paso (trace) de la ejecución de la cadena. |
+
+---
+
+# 3. memory_manager.py
+
+Provee **memoria persistente por sesión**, permitiendo al agente almacenar y recuperar contexto entre ejecuciones.  
+La memoria se guarda como archivos JSON dentro de `data/outputs/memory`.
+
+## Funciones / Métodos
+
+| Método | Descripción |
+|--------|-------------|
+| `__init__(memory_dir="data/outputs/memory")` | Inicializa el gestor, creando el directorio de memoria si no existe. |
+| `_get_memory_file(session_id)` | Obtiene la ruta del archivo JSON para la sesión dada. *(Método interno)* |
+| `store_context(session_id, info: dict)` | Guarda contexto adicional en la memoria persistente de la sesión. |
+| `recall_context(session_id)` | Recupera el contexto almacenado previamente para la sesión. |
+| `clear_memory(session_id)` | Elimina completamente la memoria asociada a la sesión. |
+
+---
+
+# Resumen General del Módulo
+
+| Componente | Propósito |
+|-----------|-----------|
+| **AutonomousAgent** | Controlador inteligente que integra análisis, razonamiento, memoria, generación de resúmenes y optimización. |
+| **ChainManager** | Construye y ejecuta cadenas de LangChain para análisis y resumen técnico. |
+| **MemoryManager** | Guarda y recupera memoria persistente entre sesiones del agente. |
+
+---
+
+```md
+
+---
+
+Si quieres, te puedo generar también el **README global del sistema de agentes**, o integrarlo en una documentación más grande junto con reporting, utils y controllers.

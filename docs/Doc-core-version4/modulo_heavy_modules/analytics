@@ -1,0 +1,65 @@
+# Documentación Técnica — Módulo `core/heavy_modules/analytics/`
+
+Este módulo ejecuta análisis estadístico avanzado, detección de anomalías, correlaciones y generación de visualizaciones para alimentar reportes y procesos de modelado.
+
+Incluye tres componentes principales:
+
+- `anomaly_detection.py` — Detección y manejo de anomalías.
+- `correlation_analysis.py` — Análisis de correlaciones y multicolinealidad.
+- `statistical_summary.py` — Estadísticos descriptivos y visualizaciones.
+
+---
+
+# 1. anomaly_detection.py
+
+Proporciona técnicas para detectar valores atípicos, datos ruidosos y medir la calidad general del dataset.
+
+## Funciones
+
+| Función | Descripción |
+|--------|-------------|
+| `detect_outliers(df, method="zscore", threshold=3.0)` | Detecta outliers usando **Z-score** o **IQR**. Genera una columna booleana `is_outlier`. |
+| `remove_anomalies(df)` | Elimina filas etiquetadas como `is_outlier` y devuelve un DataFrame limpio. |
+| `flag_noisy_data(df)` | Calcula un `noisy_score` basado en distancia media-normalizada y marca filas ruidosas como `is_noisy`. |
+| `score_data_quality(df)` | Calcula un puntaje entre 0 y 1 considerando proporción de nulos y proporción de outliers. |
+
+---
+
+# 2. correlation_analysis.py
+
+Analiza correlaciones numéricas, detecta multicolinealidad y genera visualizaciones tipo mapa de calor.
+
+## Funciones
+
+| Función | Descripción |
+|--------|-------------|
+| `compute_correlations(df, method="pearson")` | Calcula la matriz de correlación usando Pearson, Spearman o Kendall. |
+| `detect_multicollinearity(df, threshold=0.9)` | Identifica pares de columnas altamente correlacionadas sobre un umbral. |
+| `visualize_correlation_matrix(corr_matrix, output_file)` | Genera un **heatmap** de correlaciones y lo guarda en PNG. |
+
+---
+
+# 3. statistical_summary.py
+
+Genera estadísticos descriptivos avanzados, histogramas por columna y exporta resúmenes en formato JSON.
+
+## Funciones
+
+| Función | Descripción |
+|--------|-------------|
+| `compute_descriptive_stats(df)` | Genera estadísticas básicas (`mean`, `std`, `min`, `max`) y agrega la mediana. |
+| `generate_histograms(df, output_dir)` | Produce histogramas para todas las columnas numéricas y los guarda como PNG. |
+| `summary_to_json(summary_df, output_file)` | Exporta el resumen estadístico a un archivo JSON estructurado. |
+
+---
+
+# Resumen General del Módulo
+
+| Componente | Propósito |
+|-----------|-----------|
+| **AnomalyDetection** | Detecta outliers, ruido y calcula calidad del dataset. |
+| **CorrelationAnalysis** | Analiza correlaciones, detecta multicolinealidad y genera heatmaps. |
+| **StatisticalSummary** | Produce estadísticas descriptivas, histogramas y resúmenes exportables. |
+
+---
+

@@ -1,0 +1,73 @@
+# Documentación Técnica — Módulo `core/heavy_modules/reporting`
+
+Este módulo agrupa todas las herramientas relacionadas con la **generación de reportes**, ya sea en formato **PDF**, **Excel**, además del **cálculo de métricas** y la construcción estructurada de reportes técnicos.
+
+---
+
+# 1. export_excel.py
+
+Proporciona funciones para generar reportes en **formato Excel**, organizando métricas, secciones y múltiples hojas personalizadas.
+
+## Funciones
+
+| Función | Descripción |
+|--------|-------------|
+| `create_excel_summary(report_data: dict, filename: str)` | Genera un archivo Excel con dos hojas principales: *Métricas* y *Secciones*, extrayendo contenido desde `report_data`. |
+| `export_sheets(writer: pd.ExcelWriter, sheets: dict)` | Exporta múltiples DataFrames dentro de un mismo ExcelWriter, cada uno como hoja independiente. |
+| `save_excel(writer: pd.ExcelWriter, filename: str)` | Cierra y guarda el archivo Excel en disco, gestionando logs y errores. |
+
+---
+
+# 2. export_pdf.py
+
+Módulo encargado de generar documentos **PDF profesionales**, insertando texto, tablas de métricas, imágenes y metadatos usando ReportLab.
+
+## Funciones
+
+| Función | Descripción |
+|--------|-------------|
+| `add_images(story: list, charts: list)` | Inserta imágenes (gráficos) dentro del PDF, estandarizando su tamaño. |
+| `add_table(story: list, metrics: dict)` | Crea una tabla formateada a partir de las métricas del modelo. |
+| `save_pdf(doc: SimpleDocTemplate, story: list, filename: str)` | Construye y guarda el PDF en disco desde la lista `story`. |
+| `create_pdf(report_data: dict, filename: str)` | Función principal para generar un PDF completo: título, metadatos, secciones, métricas, gráficos y tablas. |
+
+---
+
+# 3. metrics.py
+
+Incluye funciones para evaluar el rendimiento de un modelo de Machine Learning y generar un resumen interpretable.
+
+## Funciones
+
+| Función | Descripción |
+|--------|-------------|
+| `calculate_custom_metrics(predictions, labels)` | Calcula accuracy, precision, recall y F1-score usando weighted average y zero-division safe. |
+| `evaluate_model_performance(results: dict)` | Extrae `predictions` y `labels` desde los resultados y calcula todas las métricas. |
+| `summarize_results(metrics: dict)` | Produce un resumen textual claro sobre el desempeño del modelo. |
+
+---
+
+# 4. report_builder.py
+
+Clase central del módulo. Permite construir reportes completos combinando texto, gráficos, métricas y metadatos. Exporta en PDF y Excel.
+
+## Clase: `ReportBuilder`
+
+### Métodos
+
+| Método | Descripción |
+|--------|-------------|
+| `__init__(title="Reporte Técnico de IA")` | Inicializa la estructura del reporte con título, secciones, gráficos, métricas y metadatos. |
+| `build_structure(metadata: dict = None)` | Configura los metadatos del reporte (autor, versión, fecha). |
+| `add_text_sections(sections: dict)` | Añade secciones textuales al reporte. |
+| `embed_charts(chart_paths: list)` | Agrega rutas a gráficos que se incrustarán en el reporte. |
+| `insert_metrics(model_results: dict)` | Evalúa las métricas del modelo y genera su resumen para incluirlo en el reporte. |
+| `finalize_report(export_format="pdf", filename="reporte_final")` | Exporta el reporte en uno o varios formatos: PDF y/o Excel, con timestamp automático. |
+
+---
+
+```md
+
+---
+
+Si quieres también puedo generarte el **README completo de toda la capa `heavy_modules`**, o integrarlo con `controller/` y `utils/` para formar una documentación unificada.

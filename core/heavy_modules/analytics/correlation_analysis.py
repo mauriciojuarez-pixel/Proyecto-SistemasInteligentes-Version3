@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 from core.utils.logger import init_logger, log_info, log_error
 from core.utils.file_manager import validate_path
+import numpy as np
+
 
 logger = init_logger("CorrelationAnalysis")
 

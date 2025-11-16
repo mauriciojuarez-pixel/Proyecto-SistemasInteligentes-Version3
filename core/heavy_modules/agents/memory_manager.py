@@ -1,4 +1,4 @@
-#core/heavy_modules/agents/memory_manager.py
+# core/heavy_modules/agents/memory_manager.py
 
 import json
 from pathlib import Path
@@ -12,9 +12,6 @@ class MemoryManager:
         self.memory_dir.mkdir(parents=True, exist_ok=True)
         log_info(logger, "MemoryManager inicializado correctamente.")
 
-    # En todas las funciones, cambiar log_info/log_error por log_info(logger, ...) y log_error(logger, ...)
-
-
     def _get_memory_file(self, session_id):
         return self.memory_dir / f"{session_id}.json"
 
@@ -23,6 +20,9 @@ class MemoryManager:
         Guarda información relevante entre ejecuciones.
         """
         try:
+            if not isinstance(info, dict):
+                raise TypeError("store_context espera un diccionario como 'info'.")
+
             file = self._get_memory_file(session_id)
             data = {}
             if file.exists():
@@ -30,10 +30,10 @@ class MemoryManager:
                     data = json.load(f)
             data.update(info)
             with open(file, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=4)
-            log_info(f"Contexto guardado para sesión {session_id}.")
+                json.dump(data, f, indent=4, ensure_ascii=False)
+            log_info(logger, f"Contexto guardado para sesión {session_id}.")
         except Exception as e:
-            log_error(f"Error al guardar contexto: {e}")
+            log_error(logger, f"Error al guardar contexto: {e}")
             raise
 
     def recall_context(self, session_id):
@@ -46,10 +46,10 @@ class MemoryManager:
                 return {}
             with open(file, "r", encoding="utf-8") as f:
                 data = json.load(f)
-            log_info(f"Contexto recuperado para sesión {session_id}.")
+            log_info(logger, f"Contexto recuperado para sesión {session_id}.")
             return data
         except Exception as e:
-            log_error(f"Error al recuperar contexto: {e}")
+            log_error(logger, f"Error al recuperar contexto: {e}")
             raise
 
     def clear_memory(self, session_id):
@@ -60,9 +60,9 @@ class MemoryManager:
             file = self._get_memory_file(session_id)
             if file.exists():
                 file.unlink()
-                log_info(f"Memoria de sesión {session_id} eliminada.")
+                log_info(logger, f"Memoria de sesión {session_id} eliminada.")
             else:
-                log_info(f"No se encontró memoria para la sesión {session_id}.")
+                log_info(logger, f"No se encontró memoria para la sesión {session_id}.")
         except Exception as e:
-            log_error(f"Error al limpiar memoria: {e}")
+            log_error(logger, f"Error al limpiar memoria: {e}")
             raise
