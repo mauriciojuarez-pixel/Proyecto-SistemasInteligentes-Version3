@@ -87,7 +87,7 @@ class AgentController:
 
                 # 4. Generar reporte final
                 self.state = AgentState.RUNNING
-                report_path = self.report_manager.generate_report(df, insights)
+                report_path = self.report_manager.generate_report(df)
                 log_info(logger,f"Reporte generado: {report_path}")
 
                 self.state = AgentState.IDLE
@@ -115,7 +115,7 @@ class AgentController:
             elif task_name == "fine_tune":
                 return self.model_manager.fine_tune(params["data_path"])
             elif task_name == "generate_report":
-                return self.report_manager.generate_report(params["data"], params["insights"])
+                return self.report_manager.generate_report(params["data"])
             else:
                 raise ValueError(f"Tarea no reconocida: {task_name}")
         except Exception as e:

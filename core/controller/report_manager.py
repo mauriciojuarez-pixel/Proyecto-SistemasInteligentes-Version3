@@ -47,17 +47,30 @@ class ReportManager:
     # ---------------------------------------------------------------
     # Generación principal de reporte
     # ---------------------------------------------------------------
-    def generate_report(self, data: pd.DataFrame, insights: dict, model_results: dict = None):
-        try:
-            self.builder.build_structure()
-            self.builder.add_text_sections(insights)
-            if model_results:
-                self.builder.insert_metrics(model_results)
-            log_info(logger, "Reporte generado correctamente.")
-            return self.builder.report
-        except Exception as e:
-            log_error(logger, f"Error generando el reporte: {e}")
-            raise
+def generate_report(self, data: pd.DataFrame, model_results: dict = None):
+    try:
+        # 1. PRIMERO: Generar el texto interpretativo usando el modelo
+        log_info(logger, "Generando texto interpretativo con el modelo...")
+        interpretative_text = self.generate_interpretative_text(data)
+        
+        # 2. SEGUNDO: Crear el diccionario de insights con el RESULTADO del modelo
+        insights = {
+            "Análisis Interpretativo": interpretative_text,
+            "Fecha de Análisis": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+        
+        # 3. TERCERO: Construir el reporte con los resultados procesados
+        self.builder.build_structure()
+        self.builder.add_text_sections(insights)  # Ahora insights contiene el RESULTADO, no el prompt
+        
+        if model_results:
+            self.builder.insert_metrics(model_results)
+            
+        log_info(logger, "Reporte generado correctamente.")
+        return self.builder.report
+    except Exception as e:
+        log_error(logger, f"Error generando el reporte: {e}")
+        raise
 
     # ---------------------------------------------------------------
     # Visualizaciones y secciones
