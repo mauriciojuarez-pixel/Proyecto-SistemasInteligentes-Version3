@@ -96,7 +96,7 @@ def generate_report_auto():
         # Generar texto interpretativo real usando el modelo
         interpretative_text = report_manager.generate_interpretative_text(df)  # Nueva función
         insights = {"Conclusión automática": interpretative_text}
-        report_manager.generate_report(df, insights)
+        report_manager.generate_report(df)
 
         
         # Exportar reporte final
