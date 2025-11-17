@@ -49,6 +49,7 @@ class ReportManager:
     # ---------------------------------------------------------------
 def generate_report(self, data: pd.DataFrame, model_results: dict = None):
     try:
+        #holi
         # 1. PRIMERO: Generar el texto interpretativo usando el modelo
         log_info(logger, "Generando texto interpretativo con el modelo...")
         interpretative_text = self.generate_interpretative_text(data)
