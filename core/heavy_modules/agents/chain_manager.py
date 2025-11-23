@@ -1,116 +1,136 @@
 # core/heavy_modules/agents/chain_manager.py
 
-from langchain_community.llms.huggingface_pipeline import HuggingFacePipeline
-from transformers import pipeline
 import os
+from llama_cpp import Llama
 
 from core.utils.logger import init_logger, log_info, log_error
 from core.utils.prompt_builder import BuilderPrompt
 
 logger = init_logger("ChainManager")
 
+
 class ChainManager:
     """
-    Ejecuta análisis y resúmenes usando prompts generados dinámicamente.
+    Maneja generación de prompts y ejecución del modelo GGUF con llama.cpp
     """
 
-    def __init__(self, model_base_path="data/models/gemma_2b_it_base"):
+    def __init__(self):
         try:
-            snapshot_dir = os.path.join(
-                model_base_path,
-                "models--google--gemma-2b-it",
-                "snapshots",
-                "96988410cbdaeb8d5093d1ebdc5a8fb563e02bad"
+            # --------------------------
+            # RUTA CORRECTA DEL MODELO
+            # --------------------------
+            self.model_path = (
+                "data/models/gemma_2b_it_base/"
+                "models--google--gemma-2b-it/"
+                "snapshots/96988410cbdaeb8d5093d1ebdc5a8fb563e02bad/"
+                "gemma-2b-it.gguf"
             )
 
-            if not os.path.exists(snapshot_dir):
-                raise FileNotFoundError(f"Ruta del modelo no encontrada: {snapshot_dir}")
+            if not os.path.exists(self.model_path):
+                raise FileNotFoundError(
+                    f"Modelo GGUF no encontrado en:\n{self.model_path}"
+                )
 
-            hf_pipe = pipeline(
-                task="text-generation",
-                model=snapshot_dir,
-                tokenizer=snapshot_dir,
-                max_new_tokens=512,
-                temperature=0.7
+            # --------------------------
+            # CARGA DEL MODELO LLAMA.CPP
+            # --------------------------
+            self.llm = Llama(
+                model_path=self.model_path,
+                n_ctx=4096,
+                n_threads=6,
+                n_gpu_layers=20,
+                verbose=False
             )
 
-            self.llm = HuggingFacePipeline(pipeline=hf_pipe)
             self.memory_context = {}
             self.trace = []
 
-            log_info(logger, f"ChainManager inicializado con modelo local en {snapshot_dir}")
+            log_info(
+                logger,
+                f"ChainManager inicializado correctamente.\nModelo cargado: {self.model_path}"
+            )
 
         except Exception as e:
             log_error(logger, f"Error inicializando ChainManager: {e}")
             raise
 
+    # ---------------------------------------------------------------------
+
     def build_prompt(self, df=None, metadata=None, instruction=""):
-        """
-        Genera un prompt completo usando BuilderPrompt.
-        """
+        """Construye un prompt profesional usando BuilderPrompt."""
         try:
-            prompt_builder = BuilderPrompt()
-            prompt_text = prompt_builder.build_prompt_chain(
+            builder = BuilderPrompt()
+            prompt_text = builder.build_prompt_chain(
                 df=df,
                 metadata=metadata,
-                instruction=instruction or "Analiza y resume los datos para generar hallazgos técnicos."
+                instruction=instruction or "Analiza y resume los datos."
             )
+
             self.trace.append("Prompt construido correctamente.")
             log_info(logger, "Prompt generado con BuilderPrompt.")
             return prompt_text
+
         except Exception as e:
-            log_error(logger, f"Error al construir el prompt: {e}")
+            log_error(logger, f"Error al construir prompt: {e}")
             raise
 
-    def execute_prompt(self, prompt: str, max_length: int = 600):
-        """
-        Ejecuta el modelo local con el prompt generado, usando texto plano.
-        """
-        try:
-            # Ejecutar pipeline de HuggingFace directamente con string
-            # siempre pasamos una lista de strings
-            result = self.llm.generate([prompt])
-            text = result.generations[0][0].text
+    # ---------------------------------------------------------------------
 
+    def execute_prompt(self, prompt: str, max_tokens: int = 512):
+        """Ejecuta el modelo GGUF usando llama_cpp."""
+
+        try:
+            response = self.llm(
+                prompt=prompt,            # <-- corregido (antes era sin keyword)
+                max_tokens=max_tokens,
+                temperature=0.7,
+                top_p=0.9,
+                stop=["#HASH:"]
+            )
+
+            text = response["choices"][0]["text"].strip()
 
             self.trace.append("Prompt ejecutado correctamente.")
-            log_info(logger, "Modelo ejecutado sobre el prompt.")
+            log_info(logger, "Modelo GGUF ejecutado sobre el prompt.")
+
+            print("\n========== PROMPT ENVIADO AL MODELO ==========\n")
+            print(prompt)
+            print("\n==============================================\n")
+
             return text
+
         except Exception as e:
-            log_error(logger, f"Error al ejecutar el prompt: {e}")
+            log_error(logger, f"Error ejecutando el modelo GGUF: {e}")
             raise
 
-
+    # ---------------------------------------------------------------------
 
     def execute_chain(self, df=None, metadata=None, instruction=""):
-        """
-        Genera prompt y lo ejecuta, retornando el resultado.
-        """
+        """Genera prompt y lo ejecuta."""
         try:
-            prompt_text = self.build_prompt(df=df, metadata=metadata, instruction=instruction)
-            result = self.execute_prompt(prompt_text)
+            prompt = self.build_prompt(df=df, metadata=metadata, instruction=instruction)
+            result = self.execute_prompt(prompt)
+
             self.trace.append("Cadena ejecutada correctamente.")
-            log_info(logger, "Cadena ejecutada.")
+            log_info(logger, "Cadena ejecutada exitosamente.")
             return result
+
         except Exception as e:
-            log_error(logger, f"Error al ejecutar la cadena: {e}")
+            log_error(logger, f"Error ejecutando la cadena: {e}")
             raise
 
+    # ---------------------------------------------------------------------
 
     def inject_context(self, memory: dict):
-        """
-        Inyecta contexto adicional que pueda usar el agente.
-        """
         try:
             self.memory_context.update(memory)
             self.trace.append("Contexto inyectado.")
-            log_info(logger, "Contexto inyectado en ChainManager.")
+            log_info(logger, "Contexto inyectado correctamente.")
         except Exception as e:
             log_error(logger, f"Error al inyectar contexto: {e}")
             raise
 
+    # ---------------------------------------------------------------------
+
     def trace_chain(self):
-        """
-        Retorna el historial de acciones y trazas.
-        """
         return self.trace

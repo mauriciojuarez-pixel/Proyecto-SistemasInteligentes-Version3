@@ -15,7 +15,7 @@ class ReportBuilder:
         self.logger = init_logger("ReportBuilder")
         self.report = {
             "title": title,
-            "sections": {},
+            "sections": {},   # Aquí se guardarán los textos
             "charts": [],
             "metrics": {},
             "metadata": {}
@@ -26,6 +26,7 @@ class ReportBuilder:
     # Construcción de la estructura del reporte
     # ---------------------------------------------------------------
     def build_structure(self, metadata: dict = None):
+        """Inicializa metadata básica del reporte."""
         try:
             self.report["metadata"] = metadata or {
                 "autor": "Sistema Inteligente",
@@ -42,6 +43,7 @@ class ReportBuilder:
     # Agregar secciones de texto
     # ---------------------------------------------------------------
     def add_text_sections(self, sections: dict):
+        """Agrega texto generado por el modelo al reporte."""
         try:
             if not isinstance(sections, dict):
                 raise TypeError("sections debe ser un diccionario {titulo: contenido}.")
@@ -72,16 +74,31 @@ class ReportBuilder:
             if not model_results:
                 log_warning(self.logger, "No se proporcionaron resultados del modelo; las métricas serán vacías.")
                 self.report["metrics"] = {}
-                self.report["sections"]["Resumen de métricas"] = "No se generaron métricas."
+                self.add_text_sections({"Resumen de métricas": "No se generaron métricas."})
                 return
 
             metrics = evaluate_model_performance(model_results)
             summary = summarize_results(metrics)
             self.report["metrics"] = metrics
-            self.report["sections"]["Resumen de métricas"] = summary
+            self.add_text_sections({"Resumen de métricas": summary})
             log_info(self.logger, "Métricas insertadas correctamente en el reporte.")
         except Exception as e:
             log_error(self.logger, f"Error insertando métricas: {e}")
+            raise
+
+    # ---------------------------------------------------------------
+    # Agregar resumen del análisis o modelo
+    # ---------------------------------------------------------------
+    def add_model_summary(self, title: str, text: str):
+        """Agrega el resumen generado por el modelo al reporte."""
+        try:
+            if not text:
+                log_warning(self.logger, f"No se proporcionó texto para la sección '{title}'.")
+                return
+            self.add_text_sections({title: text})
+            log_info(self.logger, f"Resumen '{title}' agregado correctamente al reporte.")
+        except Exception as e:
+            log_error(self.logger, f"Error agregando resumen '{title}': {e}")
             raise
 
     # ---------------------------------------------------------------

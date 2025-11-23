@@ -1,0 +1,50 @@
+Genera un resumen ejecutivo profesional basado únicamente en los datos proporcionados.
+
+TUS TAREAS Y OBJETIVOS:
+- Genera **RECOMENDACIONES ACCIONABLES**: sugiere acciones concretas basadas en los hallazgos del análisis de datos, siendo específico y práctico.
+- Genera **SUGERIR VISUALIZACIONES**: propone gráficos, histogramas, boxplots u otras visualizaciones útiles para interpretar los datos y sus patrones.
+- Genera **SUMMARY**: un resumen ejecutivo consolidado de los hallazgos clave, incluyendo patrones de las columnas, distribuciones, anomalías, outliers y cualquier insight relevante.
+- Genera **RESUMEN EJECUTIVO**: sintetiza de forma clara y concisa lo generado en RECOMENDACIONES, VISUALIZACIONES y SUMMARY, destacando los hallazgos más importantes, conclusiones clave y la situación general de los datos.
+REGLAS:
+- Mantén Markdown profesional.
+- No inventes columnas ni datos.
+- Usa solo la información proporcionada.
+
+[INFORMACIÓN INTERNA — NO INCLUIR EN EL RESUMEN]
+METADATA:
+analysis: **Gráficos:**
+- Histograma de la cantidad de productos
+- Histograma de los precios por unidad
+- Gráfico de las relaciones entre precio y cantidad de productos
+
+**Análisis:**
+
+Los datos muestran un comportamiento normal en la cantidad de productos, los precios por unidad y el total de los pedidos. También hay una fuerte correlación entre el precio y el total de los pedidos.
+
+**Recomendaciones:**
+
+- Investigar la fuente de las variaciones en los precios.
+- Identificar las posibles causas de la alta cantidad de pedidos.
+- Proponer estrategias para optimizar el proceso de compra.
+
+ROLES DE COLUMNAS:
+- transaction_id: numérico, no clasificado
+- date: categórico, no clasificado
+- customer_id: categórico, no clasificado
+- gender: categórico, no clasificado
+- age: numérico, no clasificado
+- product_category: categórico, no clasificado
+- quantity: numérico, no clasificado
+- price_per_unit: numérico, no clasificado
+- total_amount: numérico, monto/valor monetario
+
+ESTADÍSTICAS:
+**transaction_id:** Media=500.5, Mediana=500.5, Moda=1, Std=288.82, Outliers=1000
+**age:** Media=41.39, Mediana=42.0, Moda=43, Std=13.68, Outliers=1000
+**quantity:** Media=2.51, Mediana=3.0, Moda=4, Std=1.13, Outliers=1000
+**price_per_unit:** Media=179.89, Mediana=50.0, Moda=50, Std=189.68, Outliers=1000
+**total_amount:** Media=456.0, Mediana=135.0, Moda=50, Std=560.0, Outliers=1000
+
+CORRELACIONES:
+price_per_unit ↔ total_amount: 0.85
+total_amount ↔ price_per_unit: 0.85

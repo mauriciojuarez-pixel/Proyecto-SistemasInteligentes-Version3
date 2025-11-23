@@ -60,17 +60,6 @@ Administra la carga, verificación y almacenamiento de archivos de entrada y sal
 | `save_file(df, file_path, index=False)` | Guarda el DataFrame como CSV o Excel según la extensión del archivo. |
 | `get_filename(file_path)` | Retorna solo el nombre del archivo sin extensión. |
 
----
-
-# 4. gemma.py
-
-Interfaz simulada para Gemma 2B IT. Genera análisis estructurados con fines de prueba, mock o desarrollo.
-
-## Clase: `Gemma2BIT`
-
-| Método | Descripción |
-|--------|-------------|
-| `generate(prompt)` | Produce un análisis detallado dividido por columnas y un resumen general, incluyendo métricas, patrones y recomendaciones. |
 
 ---
 
@@ -107,15 +96,23 @@ Sistema centralizado de logging que asegura uniformidad en los registros de toda
 
 # 7. prompt_builder.py
 
-Construye prompts avanzados para alimentar a Gemma 2B IT, incluyendo análisis de metadatos y roles de columna.
+Construye prompts avanzados para alimentar a **Gemma 2B IT**, integrando análisis estadístico, metadatos, correlaciones y roles de columna para generar reportes automatizados y consistentes.
 
 ## Clase: `BuilderPrompt`
 
 | Método | Descripción |
 |--------|-------------|
-| `build_report_prompt(df, metadata=None)` | Genera un prompt completo con: metadata, roles inferidos de columnas, instrucciones de análisis, y estructura profesional para reportes automáticos. |
+| `__init__()` | Inicializa el generador de texto usando el modelo Gemma 2B IT en modo local mediante HuggingFace Pipeline. |
+| `_generate_hash(text)` | Genera un hash SHA-1 del prompt para verificar integridad y evitar modificaciones no controladas. |
+| `_format_metadata(metadata)` | Convierte un diccionario de metadata en un texto legible para el modelo. |
+| `_format_column_roles(df)` | Determina los roles de cada columna usando `infer_column_roles` y los devuelve en formato listable. |
+| `_format_statistics(df)` | Calcula estadísticas descriptivas por columna numérica (media, mediana, moda, desviación estándar y outliers). |
+| `_format_correlations(df)` | Identifica correlaciones numéricas altas (>0.8) mediante `compute_correlations`. |
+| `build_report_prompt(df, metadata=None)` | Genera un prompt optimizado para elaborar **solo un resumen ejecutivo final**, integrando metadata, roles, estadísticas y correlaciones sin permitir que el modelo rehaga el análisis. |
+| `build_prompt_chain(df, metadata=None, instruction="")` | Construye un prompt más general para análisis completo: patrones, distribución, anomalías y recomendaciones. |
+| `build_column_prompt(df, sample_size=5)` | Construye un prompt para inferir roles de columna usando su tipo de dato y valores de ejemplo, obligado a responder en formato JSON. |
+| `execute_model(prompt, max_length=600)` | Ejecuta el modelo Gemma 2B IT con el prompt generado y devuelve el texto producido. |
 
----
 
 # 8. time_utils.py
 

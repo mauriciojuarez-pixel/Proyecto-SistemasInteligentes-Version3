@@ -38,6 +38,8 @@ def prepare_processed_data():
     for f in raw_files:
         df = data_manager.load_data(str(f))
         df_clean = data_manager.clean_data(df)
+        if df_clean.empty:
+            log(f"[WARN] Dataset procesado {f.name} está vacío tras limpieza.")
         data_manager.save_processed(df_clean, f.name)
         log(f"[INFO] Dataset procesado: {f.name}")
     return True
@@ -61,15 +63,20 @@ def test_integration_flow():
     df = pd.concat(df_list, ignore_index=True)
     log(f"[INFO] {len(df)} filas cargadas desde {len(files)} archivos procesados.")
 
+    if df.empty:
+        log("[WARN] DataFrame combinado está vacío. Se generará reporte con mensaje por defecto.")
+
     # 3. Inicializar agente autónomo
     agent = AutonomousAgent(session_id="test_session")
 
     # 4. Analizar datos con el agente
-    analysis = agent.analyze_data(df)
+    analysis = agent.analyze_data(df) if not df.empty else None
     log("[INFO] Análisis de datos completado.")
 
     # 5. Generar resumen usando PromptBuilder y modelo local
-    summary = agent.generate_summary({"analysis": analysis})
+    summary = agent.generate_summary({"analysis": analysis}) if analysis else ""
+    if not summary.strip():
+        summary = "No se generó resumen debido a datos insuficientes."
     log(f"[INFO] Resumen generado: {summary[:200]}...")  # Mostrar solo inicio
 
     # 6. Generar reporte final
@@ -80,7 +87,10 @@ def test_integration_flow():
         "columnas": list(df.columns),
         "resumen": summary
     })
-    report_manager.generate_report(df, {"Resumen automático": summary})
+
+    # Asegurarse de que haya al menos una sección
+    sections = {"Resumen automático": summary} if summary else {"Resumen automático": "No hay contenido disponible."}
+    report_manager.generate_report(df, sections)
 
     pdf_file = report_manager.export_to_pdf()
     excel_file = report_manager.export_to_excel()
